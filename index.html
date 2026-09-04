@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WAEWMAYURES — Blue House Cheerleader 2026</title>
     <link rel="stylesheet" href="style.css">
+    
 </head>
 
 <body>
@@ -252,6 +253,16 @@
     </footer>
 
     <script src="script.js"></script>
+    <!-- ================= SCRIPT FOR EXPIRATION CONTROL (ADDED) ================= -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // ดึงปุ่ม Apply Now ทั้งหมดในหน้า index.html แล้วเติม id="register-link" ให้อัตโนมัติ
+            const applyButtons = document.querySelectorAll('a[href="apply.html"]');
+            applyButtons.forEach(btn => {
+                btn.id = "register-link";
+            });
+        });
+    </script>
 </body>
 
 </html>

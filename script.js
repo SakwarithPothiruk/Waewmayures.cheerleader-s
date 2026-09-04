@@ -169,3 +169,132 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+
+// เปลี่ยน URL นี้เป็น Web App URL ที่ได้จาก Deploy Google Apps Script
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwN0HhOOpZHjTkNok1T0VGt80jDYCmjT6e466-VaHKDLDlBjk2hWyWP6lwjUJoxm4mi/exec://script.google.com/macros/s/YOUR_WEB_APP_ID/exec";
+
+// 1. ตรวจสอบ Auto-Login
+window.addEventListener('DOMContentLoaded', () => {
+    const savedRole = localStorage.getItem('userRole');
+    if (savedRole === 'User') window.location.href = 'dashboard.html';
+    else if (savedRole === 'Staff' || savedRole === 'Admin') window.location.href = 'admin.html';
+});
+
+// 2. ส่งค่าไปเช็กสิทธิ์ล็อกอิน
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerText;
+    
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const role = document.querySelector('input[name="role"]:checked').value;
+
+    submitBtn.innerText = "VERIFYING...";
+    submitBtn.disabled = true;
+
+    try {
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                action: 'login',
+                username: username,
+                password: password,
+                role: role
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            // เซฟข้อมูลลง localStorage
+            localStorage.setItem('username', result.username);
+            localStorage.setItem('userRole', result.role);
+            localStorage.setItem('userGroup', result.group); // เซฟกลุ่ม เช่น Group A
+
+            // Redirect แยกตาม Role
+            if (result.role === 'User') {
+                window.location.href = 'dashboard.html';
+            } else if (result.role === 'Staff' || result.role === 'Admin') {
+                window.location.href = 'admin.html';
+            }
+        } else {
+            alert(result.message || 'ข้อมูลไม่ถูกต้อง!');
+            submitBtn.innerText = originalBtnText;
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error logging in:', error);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+        submitBtn.innerText = originalBtnText;
+        submitBtn.disabled = false;
+    }
+});
+
+// 3. ปุ่มสลับเปิด-ปิดดูรหัสผ่าน
+const togglePassword = document.querySelector('#togglePassword');
+const passwordInput = document.querySelector('#password');
+
+togglePassword.addEventListener('click', function () {
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    this.classList.toggle('fa-eye');
+    this.classList.toggle('fa-eye-slash');
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. ระบุ ID ของปุ่ม/ลิงก์สมัครเรียนบนหน้าเว็บ
+    const registerBtn = document.getElementById('register-link');
+
+    // ฟังก์ชันเช็กว่าหมดเวลาแล้วหรือยัง (>= 22:00 น.)
+    function isExpired() {
+        const currentHour = new Date().getHours();
+        return currentHour >= 22; // ตั้งแต่ 22:00 น. เป็นต้นไป
+    }
+
+    // กรณีที่ 1: ดักจับการกดปุ่มบนหน้าหลัก
+    if (registerBtn) {
+        if (isExpired()) {
+            registerBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = 'closed.html';
+            });
+        }
+    }
+
+    // กรณีที่ 2: ดักจับถ้าผู้ใช้แอบพิมพ์ URL เข้าหน้าสมัครตรงๆ
+    // (นำบรรทัดล่างนี้ไปวางบนสุดของไฟล์ JS ในหน้าฟอร์มสมัคร)
+    if (isExpired() && window.location.pathname.includes('form.html')) {
+        window.location.href = 'closed.html';
+    }
+});
+
+/* =========================================================
+   5. DEADLINE AUTO-REDIRECT (CLOSES AT 22:00)
+   ========================================================= */
+document.addEventListener("DOMContentLoaded", function () {
+    function isExpired() {
+        const currentHour = new Date().getHours();
+        return currentHour >= 22; // เช็กเวลาตั้งแต่ 22:00 น. เป็นต้นไป
+    }
+
+    // กรณีที่ 1: ดักจับการกดปุ่ม Apply Now บนหน้าหลัก
+    const registerBtns = document.querySelectorAll('a[href="apply.html"], #register-link');
+    if (isExpired()) {
+        registerBtns.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                window.location.href = 'closed.html';
+            });
+        });
+    }
+
+    // กรณีที่ 2: ถ้าเปิดเข้ามาในหน้าสมัคร (apply.html หรือ form.html) ตรงๆ หลัง 22:00 น. ให้เด้งออกทันที
+    const currentPath = window.location.pathname;
+    if (isExpired() && (currentPath.includes('apply.html') || currentPath.includes('form.html'))) {
+        window.location.href = 'closed.html';
+    }
+});
